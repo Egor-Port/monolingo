@@ -5,6 +5,7 @@ import PairManager from './components/PairManager';
 import GameBoard from './components/GameBoard';
 
 function App() {
+  
   const [stats, setStats] = useState({ correct: 0, incorrect: 0 });
   const [currentTask, setCurrentTask] = useState(null);
   const [pairs, setPairs] = useState([]);
