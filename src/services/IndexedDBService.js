@@ -1,7 +1,7 @@
 class IndexedDBService {
   constructor() {
     this.dbName = 'AudioWordGameDB';
-    this.version = 1;
+    this.version = 2; // Увеличиваем версию для обновления структуры
     this.db = null;
   }
 
@@ -18,11 +18,13 @@ class IndexedDBService {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         
+        // Создаем хранилище для пар
         if (!db.objectStoreNames.contains('pairs')) {
-          const store = db.createObjectStore('pairs', { keyPath: 'id' });
+          const store = db.createObjectStore('pairs', { keyPath: 'id', autoIncrement: true });
           store.createIndex('word', 'word', { unique: false });
         }
         
+        // Создаем хранилище для статистики
         if (!db.objectStoreNames.contains('stats')) {
           db.createObjectStore('stats', { keyPath: 'id' });
         }

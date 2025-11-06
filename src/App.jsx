@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import IndexedDBService from './services/IndexedDBService'
+import IndexedDBService from './services/IndexedDBService';
 import Stats from './components/Stats';
 import PairManager from './components/PairManager';
 import GameBoard from './components/GameBoard';
 
 function App() {
-  
   const [stats, setStats] = useState({ correct: 0, incorrect: 0 });
   const [currentTask, setCurrentTask] = useState(null);
   const [pairs, setPairs] = useState([]);
@@ -53,55 +52,54 @@ function App() {
     return [...colorPalette].sort(() => Math.random() - 0.5);
   };
 
+  // НОВАЯ ЛОГИКА ГЕНЕРАЦИИ ЗАДАНИЙ
   const generateNewData = () => {
     if (uploadedPairs.length < 3) return null;
 
-    const maxItems = Math.min(uploadedPairs.length, 6);
-    const itemCount = Math.max(3, Math.floor(Math.random() * (maxItems - 2)) + 3);
+    // Определяем количество элементов в задании (3-6)
+    const itemCount = Math.min(uploadedPairs.length, Math.floor(Math.random() * 4) + 3);
     
+    // Выбираем случайные пары для задания
     const selectedPairs = [...uploadedPairs]
       .sort(() => Math.random() - 0.5)
       .slice(0, itemCount);
 
+    // Создаем массивы для аудио и слов
     const audioArray = [];
     const wordArray = [];
 
+    // Заполняем массивы ИЗ ОДНИХ И ТЕХ ЖЕ ПАР
     selectedPairs.forEach((pair, index) => {
+      // Аудио элементы
       audioArray.push({
         id: pair.id,
         audioData: pair.audioData,
-        displayName: `Аудио ${index + 1}`
+        displayName: `Аудио ${index + 1}`,
+        originalWord: pair.word // Сохраняем оригинальное слово для отладки
       });
 
+      // Слова - ТОЧНО ТЕ ЖЕ САМЫЕ что и в аудио
       wordArray.push({
         id: pair.id,
-        word: pair.word
+        word: pair.word,
+        originalId: pair.id // Сохраняем оригинальный ID
       });
     });
 
-    const matchingPairs = [];
-    const usedIds = new Set();
-    
-    const pairCount = Math.min(Math.floor(Math.random() * 4), selectedPairs.length);
-    for (let i = 0; i < pairCount; i++) {
-      let pairId;
-      
-      do {
-        const randomIndex = Math.floor(Math.random() * selectedPairs.length);
-        pairId = selectedPairs[randomIndex].id;
-      } while (usedIds.has(pairId));
-      
-      usedIds.add(pairId);
-      matchingPairs.push({ audioId: pairId, wordId: pairId });
-    }
-
-    const shuffledAudio = [...audioArray].sort(() => Math.random() - 0.5);
+    // Перемешиваем ТОЛЬКО слова, чтобы пользователь искал соответствия
     const shuffledWords = [...wordArray].sort(() => Math.random() - 0.5);
 
+    // Правильные пары - это когда ID аудио и слова совпадают
+    // В этом задании ВСЕ пары должны быть правильными, если пользователь найдет все соответствия
+    const correctPairs = selectedPairs.map(pair => ({
+      audioId: pair.id,
+      wordId: pair.id
+    }));
+
     return {
-      audio: shuffledAudio,
-      words: shuffledWords,
-      correctPairs: matchingPairs
+      audio: audioArray, // Аудио в оригинальном порядке
+      words: shuffledWords, // Слова перемешаны
+      correctPairs: correctPairs // Все пары правильные
     };
   };
 
@@ -150,19 +148,21 @@ function App() {
   const handleCheckAnswer = () => {
     if (!currentTask) return;
 
+    // Проверяем, что пользователь нашел ВСЕ правильные пары
     const userPairsCorrect = pairs.every(pair => 
       currentTask.correctPairs.some(correctPair => 
         correctPair.audioId === pair.audioId && correctPair.wordId === pair.wordId
       )
     );
 
-    const allCorrectPairsSelected = currentTask.correctPairs.every(correctPair =>
+    // Проверяем, что найдены ВСЕ правильные пары
+    const allCorrectPairsFound = currentTask.correctPairs.every(correctPair =>
       pairs.some(pair => 
         pair.audioId === correctPair.audioId && pair.wordId === correctPair.wordId
       )
     );
 
-    const isCorrect = userPairsCorrect && allCorrectPairsSelected && 
+    const isCorrect = userPairsCorrect && allCorrectPairsFound && 
                      pairs.length === currentTask.correctPairs.length;
 
     setCheckResult(isCorrect);

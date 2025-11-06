@@ -28,7 +28,8 @@ const GameBoard = ({
         borderRadius: '5px',
         textAlign: 'center'
       }}>
-        <p>Добавьте пары слов и аудио, чтобы начать игру. Необходимо минимум 3 пары.</p>
+        <p>Добавьте минимум 3 пары слов и аудио, чтобы начать игру.</p>
+        <p>Сейчас загружено пар: {pairs.length}</p>
       </div>
     );
   }
@@ -41,12 +42,13 @@ const GameBoard = ({
         backgroundColor: '#f0f8ff',
         borderRadius: '5px'
       }}>
-        <p><strong>Инструкция:</strong> Последовательно выбирайте аудио и соответствующее ему слово.</p>
-        <p>Созданные пары будут отображаться ниже и выделяться цветом.</p>
+        <p><strong>Инструкция:</strong> Прослушайте аудио и найдите соответствующее слово.</p>
+        <p>Создайте пары, сопоставляя аудио с правильными словами.</p>
+        <p>В этом задании нужно найти <strong>{currentTask.correctPairs.length}</strong> правильных пар.</p>
       </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <h2>Аудио:</h2>
+        <h2>Аудио ({currentTask.audio.length}):</h2>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {currentTask.audio.map(audioItem => {
             const pairColor = getElementColor('audio', audioItem.id);
@@ -95,7 +97,7 @@ const GameBoard = ({
       </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <h2>Слова:</h2>
+        <h2>Слова ({currentTask.words.length}):</h2>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {currentTask.words.map(wordItem => {
             const pairColor = getElementColor('word', wordItem.id);
@@ -127,7 +129,7 @@ const GameBoard = ({
 
       {pairs.length > 0 && (
         <div style={{ marginBottom: '30px' }}>
-          <h2>Созданные пары:</h2>
+          <h2>Созданные пары ({pairs.length} из {currentTask.correctPairs.length}):</h2>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {pairs.map((pair, index) => {
               const audioItem = currentTask.audio.find(a => a.id === pair.audioId);
@@ -166,7 +168,7 @@ const GameBoard = ({
           backgroundColor: '#fff3cd',
           borderRadius: '5px'
         }}>
-          <p>Выбрано аудио {currentTask.audio.find(a => a.id === currentAudio).displayName}. Теперь выберите соответствующее слово.</p>
+          <p>Выбрано аудио. Теперь выберите соответствующее слово.</p>
         </div>
       )}
 
@@ -183,7 +185,7 @@ const GameBoard = ({
             cursor: checkResult === null ? 'pointer' : 'not-allowed'
           }}
         >
-          Проверить
+          Проверить ({pairs.length}/{currentTask.correctPairs.length})
         </button>
 
         <button
@@ -198,7 +200,7 @@ const GameBoard = ({
             cursor: checkResult !== null ? 'pointer' : 'not-allowed'
           }}
         >
-          Далее
+          Новое задание
         </button>
       </div>
 
@@ -213,12 +215,8 @@ const GameBoard = ({
           <h3>{checkResult ? '✅ Правильно!' : '❌ Неправильно!'}</h3>
           <p>
             {checkResult 
-              ? 'Все пары совпали!' 
-              : `Правильные пары: ${currentTask.correctPairs.map(p => {
-                const audioItem = currentTask.audio.find(a => a.id === p.audioId);
-                const wordItem = currentTask.words.find(w => w.id === p.wordId);
-                return `${audioItem.displayName} - ${wordItem.word}`;
-              }).join(', ') || 'нет пар'}`}
+              ? `Вы нашли все ${currentTask.correctPairs.length} правильных пар!` 
+              : `Попробуйте еще раз! Нужно найти все ${currentTask.correctPairs.length} правильных пар.`}
           </p>
         </div>
       )}
