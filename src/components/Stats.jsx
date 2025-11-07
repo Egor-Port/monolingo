@@ -8,7 +8,7 @@ const Stats = ({
     <div style={{ 
       marginBottom: '20px', 
       padding: '15px', 
-      backgroundColor: '#e9ecef',
+      backgroundColor: '#5d5d5dff',
       borderRadius: '5px',
       display: 'flex',
       justifyContent: 'space-between',

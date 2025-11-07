@@ -39,7 +39,7 @@ const GameBoard = ({
       <div style={{ 
         marginBottom: '20px', 
         padding: '10px', 
-        backgroundColor: '#f0f8ff',
+        backgroundColor: '#5d5d5d',
         borderRadius: '5px'
       }}>
         <p><strong>Инструкция:</strong> Прослушайте аудио и найдите соответствующее слово.</p>
@@ -165,8 +165,9 @@ const GameBoard = ({
         <div style={{ 
           marginBottom: '20px',
           padding: '10px',
-          backgroundColor: '#fff3cd',
-          borderRadius: '5px'
+          backgroundColor: '#000000ff',
+          borderRadius: '1em',
+          border: '0.125em, solid, #fff3cd',
         }}>
           <p>Выбрано аудио. Теперь выберите соответствующее слово.</p>
         </div>

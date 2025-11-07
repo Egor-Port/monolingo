@@ -53,7 +53,7 @@ const PairManager = ({
     <div style={{ 
       marginBottom: '30px', 
       padding: '20px', 
-      backgroundColor: '#f8f9fa',
+      backgroundColor: '#5d5d5dff',
       borderRadius: '8px',
       border: '1px solid #dee2e6'
     }}>
@@ -143,7 +143,7 @@ const PairManager = ({
                   padding: '10px 15px',
                   border: '1px solid #007bff',
                   borderRadius: '5px',
-                  backgroundColor: '#e3f2fd',
+                  backgroundColor: '#333333ff',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
