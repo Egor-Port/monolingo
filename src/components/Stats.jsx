@@ -1,6 +1,9 @@
 import React from 'react';
 
-const Stats = ({ stats, onResetStats }) => {
+const Stats = ({ 
+  stats, 
+  onResetStats 
+}) => {
   return (
     <div style={{ 
       marginBottom: '20px', 

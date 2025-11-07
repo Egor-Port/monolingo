@@ -46,8 +46,8 @@ function App() {
 
   const generateColors = () => {
     const colorPalette = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+      '#FF6B6B', '#cb1099ff', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#28463eff', '#7f6ff7ff', '#5b396aff', '#85C1E9'
     ];
     return [...colorPalette].sort(() => Math.random() - 0.5);
   };
@@ -248,7 +248,10 @@ function App() {
     <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
       <h1>Аудио-Слово Игра</h1>
       
-      <Stats stats={stats} onResetStats={handleResetStats} />
+      <Stats 
+        stats={stats} 
+        onResetStats={handleResetStats} 
+      />
 
       <PairManager
         uploadedPairs={uploadedPairs}
