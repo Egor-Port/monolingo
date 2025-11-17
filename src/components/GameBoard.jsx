@@ -26,7 +26,8 @@ const GameBoard = ({
         padding: '20px', 
         backgroundColor: '#fff3cd',
         borderRadius: '5px',
-        textAlign: 'center'
+        textAlign: 'center',
+        color: 'black'
       }}>
         <p>Добавьте минимум 3 пары слов и аудио, чтобы начать игру.</p>
         <p>Сейчас загружено пар: {pairs.length}</p>
