@@ -246,7 +246,7 @@ function App() {
 
   return (
     <div style={{background:'black', color:'white', padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1>Аудио-Слово Игра</h1>
+      <h1>monolingo Игра</h1>
       
       <Stats 
         stats={stats} 
