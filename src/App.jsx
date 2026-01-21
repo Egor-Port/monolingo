@@ -16,7 +16,6 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isAddingPair, setIsAddingPair] = useState(false);
 
   // Инициализация данных из API (замена IndexedDB)
   useEffect(() => {
@@ -47,6 +46,30 @@ function App() {
     }
   }, [stats, isInitialized]);
 
+useEffect(() => {
+    if (currentTask && checkResult === null) {
+        // Если идет игра - не обновляем список, чтобы не сбивать пользователя
+        return;
+    }
+    
+    const loadPairs = async () => {
+        try {
+            const data = await apiService.getPairs();
+            setUploadedPairs(data);
+            console.log('Список пар обновлен с сервера:', data.length, 'пар');
+        } catch (error) {
+            console.warn('Не удалось обновить список пар:', error.message);
+        }
+    };
+    
+    // Обновляем при монтировании и после каждого добавления/удаления
+    loadPairs();
+    
+    // Можно добавить периодическое обновление (опционально)
+    // const interval = setInterval(loadPairs, 30000); // Каждые 30 секунд
+    // return () => clearInterval(interval);
+  }, [currentTask, checkResult]); // Зависимости
+  
   const generateColors = () => {
     const colorPalette = [
       '#FF6B6B', '#cb1099ff', '#45B7D1', '#96CEB4', '#FFEAA7',
@@ -194,45 +217,57 @@ function App() {
   };
 
   // Обновленная функция добавления пары с отправкой на сервер
-  const handleAddPair = async (newPairData) => {
+ const handleAddPair = async (newPairData) => {
+    setIsLoading(true);
+    
     try {
-        setIsLoading(true);
-        
-        // Конвертируем файл в Base64
+        // 1. Преобразуем файл в Base64
         const audioData = await readFileAsBase64(newPairData.audioFile);
         
-        const pairToSave = {
+        // 2. Отправляем на сервер
+        const result = await apiService.addPair({
             word: newPairData.word.trim(),
             audioData: audioData,
             fileName: newPairData.audioFile.name
-        };
-        
-        console.log('Отправляю на сервер:', { 
-            word: pairToSave.word, 
-            fileName: pairToSave.fileName,
-            audioDataLength: pairToSave.audioData.length 
         });
         
-        // Отправляем на сервер
-        const savedPair = await apiService.addPair(pairToSave);
+        console.log('✅ Результат от сервера:', result);
         
-        console.log('Получен ответ от сервера:', savedPair);
+        // 3. ТОЛЬКО ПОСЛЕ УСПЕШНОГО ОТВЕТА ОБНОВЛЯЕМ СОСТОЯНИЕ
+        const newUploadedPair = {
+            id: result.pair?.id || result.id,
+            word: result.pair?.word || newPairData.word.trim(),
+            audioData: audioData,
+            fileName: result.pair?.file_name || newPairData.audioFile.name
+        };
         
-        // ОБНОВЛЯЕМ СОСТОЯНИЕ: добавляем новую пару в список
-        setUploadedPairs(prev => [...prev, savedPair]);
+        // 4. ОБНОВЛЯЕМ состояние пар (важно делать через предыдущее состояние)
+        setUploadedPairs(prev => {
+            const updated = [...prev, newUploadedPair];
+            console.log('🔄 Обновленный список пар:', updated);
+            return updated;
+        });
         
-        // Сбрасываем форму
-        setNewPair({ word: '', audioFile: null });
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+        // 5. Показываем сообщение об успехе
+        alert(`✅ Пара "${newPairData.word.trim()}" успешно добавлена! (ID: ${newUploadedPair.id})`);
         
-        // Успешное сообщение
-        alert(`Пара "${savedPair.word}" успешно добавлена!`);
+        return result;
         
     } catch (error) {
-        console.error('Ошибка при добавлении пары:', error);
-        alert(`Ошибка: ${error.message}`);
+        console.error('❌ Ошибка при добавлении пары:', error);
+        
+        let userMessage = error.message;
+        
+        if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            userMessage = 'Нет соединения с сервером. Проверьте, запущен ли сервер на localhost:5000';
+        } else if (error.message.includes('большой') || error.message.includes('413')) {
+            userMessage = 'Аудиофайл слишком большой. Попробуйте файл меньше 5MB.';
+        } else if (error.message.includes('500')) {
+            userMessage = 'Внутренняя ошибка сервера. Проверьте консоль сервера.';
+        }
+        
+        alert(`❌ Ошибка добавления: ${userMessage}`);
+        throw error;
     } finally {
         setIsLoading(false);
     }
@@ -240,33 +275,34 @@ function App() {
 
   // Обновленная функция удаления пары с сервера
   const handleDeleteUploadedPair = async (id) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту пару?')) {
-      return;
+    // Сначала показываем подтверждение
+    if (!window.confirm(`Удалить пару с ID ${id}?`)) {
+        return;
     }
 
     try {
-      // Удаляем пару на сервере через API
-      await apiService.deletePair(id);
-      
-      // Обновляем локальное состояние после успешного удаления на сервере
-      setUploadedPairs(prev => prev.filter(pair => pair.id !== id));
-      
-      alert('Пара успешно удалена с сервера');
-      
-    } catch (err) {
-      console.error('Ошибка при удалении пары:', err);
-      
-      if (err.message.includes('Failed to fetch')) {
-        alert('Ошибка подключения к серверу. Удаление выполнено только локально.');
-        // Все равно удаляем из локального состояния
-        setUploadedPairs(prev => prev.filter(pair => pair.id !== id));
-      } else if (err.message.includes('404')) {
-        alert('Пара не найдена на сервере. Удаление выполнено локально.');
-        // Все равно удаляем из локального состояния
-        setUploadedPairs(prev => prev.filter(pair => pair.id !== id));
-      } else {
-        alert(`Ошибка при удалении пары: ${err.message}. Попробуйте обновить страницу.`);
-      }
+        // Пытаемся удалить на сервере
+        const result = await apiService.deletePair(id);
+        
+        // Если успешно - обновляем локальное состояние
+        const updatedPairs = uploadedPairs.filter(pair => pair.id !== id);
+        setUploadedPairs(updatedPairs);
+        
+        console.log('Удалено успешно:', result.message);
+        alert(`Пара успешно удалена из базы данных!`);
+        
+    } catch (error) {
+        console.error('Ошибка удаления:', error.message);
+        
+        // Если сервер вернул 404 (не найдено), удаляем только локально
+        if (error.message.includes('404') || error.message.includes('не найдена')) {
+            const updatedPairs = uploadedPairs.filter(pair => pair.id !== id);
+            setUploadedPairs(updatedPairs);
+            alert(`Пара не найдена на сервере. Удаление выполнено локально.`);
+        } else {
+            // Другие ошибки (проблемы с сетью, сервером и т.д.)
+            alert(`Ошибка удаления: ${error.message}`);
+        }
     }
   };
 
@@ -316,7 +352,7 @@ function App() {
       </div>
     );
   }
-
+  
   return (
     <div style={{background:'black', color:'white', padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
       <h1>monolingo Игра 1</h1>
@@ -343,7 +379,6 @@ function App() {
         onAddPair={handleAddPair}
         onDeletePair={handleDeleteUploadedPair}
         onClearAllPairs={handleClearAllPairs}
-        isAddingPair={isAddingPair}
       />
 
       <GameBoard
