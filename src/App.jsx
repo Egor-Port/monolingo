@@ -6,6 +6,7 @@ import Register from './components/Register';
 import Game from './components/Game';
 import AdminPanel from './components/AdminPanel';
 import UserStats from './components/UserStats';
+import Header from './components/Header';
 
 function App() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -52,82 +53,22 @@ function App() {
     return (
         <Router>
             <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+                
+                <style>
+                    {`
+                        a:hover {
+                            opacity: 0.8;
+                        }
+                        button:hover {
+                            opacity: 0.9;
+                            transform: translateY(-1px);
+                            transition: all 0.2s ease;
+                        }
+                    `}
+                </style>
+
                 {currentUser && (
-                    <header style={{
-                        backgroundColor: '#fff',
-                        padding: '15px 30px',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '30px'
-                    }}>
-                        <div>
-                            <Link to="/" style={{
-                                textDecoration: 'none',
-                                fontSize: '20px',
-                                fontWeight: 'bold',
-                                color: '#333',
-                                marginRight: '30px'
-                            }}>
-                                🎵 АудиоСлово
-                            </Link>
-                            <span style={{ 
-                                backgroundColor: currentUser.role === 'admin' ? '#dc3545' : '#6c757d',
-                                color: 'white',
-                                padding: '3px 8px',
-                                borderRadius: '3px',
-                                fontSize: '12px',
-                                fontWeight: 'bold'
-                            }}>
-                                {currentUser.role === 'admin' ? 'АДМИНИСТРАТОР' : 'ПОЛЬЗОВАТЕЛЬ'}
-                            </span>
-                        </div>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ color: '#666' }}>
-                                <strong>{currentUser.username}</strong>
-                                <div style={{ fontSize: '12px', color: '#999' }}>
-                                    {currentUser.email}
-                                </div>
-                            </div>
-                            
-                            <div>
-                                {currentUser.role === 'admin' && (
-                                    <Link to="/admin" style={{
-                                        marginRight: '15px',
-                                        textDecoration: 'none',
-                                        color: '#007bff',
-                                        fontWeight: '500'
-                                    }}>
-                                        📊 Панель админа
-                                    </Link>
-                                )}
-                                <Link to="/stats" style={{
-                                    marginRight: '15px',
-                                    textDecoration: 'none',
-                                    color: '#007bff',
-                                    fontWeight: '500'
-                                }}>
-                                    📈 Статистика
-                                </Link>
-                                <button 
-                                    onClick={handleLogout}
-                                    style={{
-                                        padding: '8px 16px',
-                                        backgroundColor: '#f8f9fa',
-                                        color: '#dc3545',
-                                        border: '1px solid #dc3545',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontWeight: '500'
-                                    }}
-                                >
-                                    Выйти
-                                </button>
-                            </div>
-                        </div>
-                    </header>
+                    <Header user={currentUser} onLogout={handleLogout} />
                 )}
                 
                 <main style={{ 
@@ -160,6 +101,18 @@ function App() {
                             path="/stats" 
                             element={currentUser ? <UserStats /> : <Navigate to="/login" />} 
                         />
+                        <Route 
+                            path="*" 
+                            element={
+                                <div style={{ textAlign: 'center', padding: '50px' }}>
+                                    <h1>404 - Страница не найдена</h1>
+                                    <p>Извините, запрашиваемая страница не существует.</p>
+                                    <Link to="/" style={{ color: '#007bff' }}>
+                                        Вернуться на главную
+                                    </Link>
+                                </div>
+                            } 
+                        />
                     </Routes>
                 </main>
 
@@ -171,7 +124,7 @@ function App() {
                         color: '#666',
                         borderTop: '1px solid #eee'
                     }}>
-                        <p>АудиоСлово Игра © {new Date().getFullYear()}</p>
+                        <p>Monolingo © {new Date().getFullYear()}</p>
                     </footer>
                 )}
             </div>

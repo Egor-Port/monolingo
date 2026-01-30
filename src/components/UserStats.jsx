@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '../services/ApiService';
 
 const UserStats = () => {
     const [stats, setStats] = useState(null);
-    const [recentGames, setRecentGames] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         loadStats();
@@ -12,187 +14,463 @@ const UserStats = () => {
 
     const loadStats = async () => {
         try {
+            setLoading(true);
             const data = await apiService.getMyStats();
-            setStats(data.summary);
-            setRecentGames(data.recent_games || []);
-            setLoading(false);
-        } catch (error) {
-            console.error('Ошибка загрузки статистики:', error);
+            setStats(data);
+            setError('');
+        } catch (err) {
+            console.error('Ошибка загрузки статистики:', err);
+            setError('Не удалось загрузить статистику. Проверьте настройки сервера.');
+        } finally {
             setLoading(false);
         }
     };
 
+    const handleStartNewGame = () => {
+        // Переходим на главную страницу, где уже есть логика игры
+        navigate('/');
+        // Можно также обновить страницу, чтобы сбросить состояние игры
+        setTimeout(() => window.location.reload(), 100);
+    };
+
     if (loading) {
-        return <div style={{ textAlign: 'center', padding: '50px' }}>Загрузка статистики...</div>;
+        return (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '20px' }}>📊</div>
+                <p>Загрузка статистики...</p>
+            </div>
+        );
     }
 
-    const totalGames = stats?.total_games || 0;
-    const totalCorrect = stats?.total_correct || 0;
-    const totalIncorrect = stats?.total_incorrect || 0;
-    const totalAnswers = totalCorrect + totalIncorrect;
-    const successRate = totalAnswers > 0 ? Math.round((totalCorrect / totalAnswers) * 100) : 0;
-
-    return (
-        <div>
-            <h1 style={{ marginBottom: '30px' }}>Моя статистика</h1>
-            
+    if (error) {
+        return (
             <div style={{ 
-                display: 'flex', 
-                gap: '20px', 
-                flexWrap: 'wrap',
-                marginBottom: '40px'
+                padding: '40px', 
+                textAlign: 'center',
+                backgroundColor: '#f8d7da',
+                borderRadius: '8px',
+                color: '#721c24'
             }}>
-                <div style={{ 
-                    padding: '25px', 
-                    backgroundColor: '#e3f2fd', 
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                    flex: '1',
-                    minWidth: '250px'
-                }}>
-                    <h3 style={{ marginTop: 0, color: '#1976d2' }}>Всего игр</h3>
-                    <p style={{ fontSize: '36px', fontWeight: 'bold', margin: '15px 0' }}>
-                        {totalGames}
-                    </p>
-                    <p style={{ color: '#666' }}>сыграно раундов</p>
-                </div>
-                
-                <div style={{ 
-                    padding: '25px', 
-                    backgroundColor: '#e8f5e9', 
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                    flex: '1',
-                    minWidth: '250px'
-                }}>
-                    <h3 style={{ marginTop: 0, color: '#388e3c' }}>Правильных ответов</h3>
-                    <p style={{ fontSize: '36px', fontWeight: 'bold', margin: '15px 0' }}>
-                        {totalCorrect}
-                    </p>
-                    <div style={{ 
-                        height: '10px', 
-                        backgroundColor: '#c8e6c9',
-                        borderRadius: '5px',
-                        marginBottom: '10px'
-                    }}>
-                        <div style={{ 
-                            width: `${successRate}%`, 
-                            height: '100%', 
-                            backgroundColor: '#4caf50',
-                            borderRadius: '5px'
-                        }}></div>
-                    </div>
-                    <p style={{ color: '#666' }}>{successRate}% успеха</p>
-                </div>
-                
-                <div style={{ 
-                    padding: '25px', 
-                    backgroundColor: '#ffebee', 
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                    flex: '1',
-                    minWidth: '250px'
-                }}>
-                    <h3 style={{ marginTop: 0, color: '#d32f2f' }}>Неправильных ответов</h3>
-                    <p style={{ fontSize: '36px', fontWeight: 'bold', margin: '15px 0' }}>
-                        {totalIncorrect}
-                    </p>
-                    <p style={{ color: '#666' }}>ошибок совершено</p>
-                </div>
-            </div>
-
-            {recentGames.length > 0 ? (
-                <div>
-                    <h2 style={{ marginBottom: '20px' }}>Последние игры</h2>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Дата игры</th>
-                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Правильно</th>
-                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Неправильно</th>
-                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Результат</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentGames.map((game, index) => (
-                                    <tr key={game.id} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '12px' }}>
-                                            {new Date(game.game_date).toLocaleString()}
-                                        </td>
-                                        <td style={{ padding: '12px' }}>
-                                            <span style={{ 
-                                                backgroundColor: '#4caf50', 
-                                                color: 'white',
-                                                padding: '4px 8px',
-                                                borderRadius: '3px',
-                                                fontWeight: 'bold'
-                                            }}>
-                                                {game.correct_count}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '12px' }}>
-                                            <span style={{ 
-                                                backgroundColor: '#f44336', 
-                                                color: 'white',
-                                                padding: '4px 8px',
-                                                borderRadius: '3px',
-                                                fontWeight: 'bold'
-                                            }}>
-                                                {game.incorrect_count}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '12px' }}>
-                                            {game.correct_count > game.incorrect_count ? (
-                                                <span style={{ color: '#4caf50', fontWeight: 'bold' }}>Победа</span>
-                                            ) : game.correct_count < game.incorrect_count ? (
-                                                <span style={{ color: '#f44336', fontWeight: 'bold' }}>Поражение</span>
-                                            ) : (
-                                                <span style={{ color: '#ff9800', fontWeight: 'bold' }}>Ничья</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            ) : (
-                <div style={{ 
-                    textAlign: 'center', 
-                    padding: '40px', 
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '8px'
-                }}>
-                    <h3 style={{ color: '#666' }}>У вас пока нет сыгранных игр</h3>
-                    <p>Сыграйте несколько раундов, чтобы увидеть свою статистику</p>
-                    <a href="/" style={{
-                        display: 'inline-block',
+                <h3>❌ Ошибка загрузки статистики</h3>
+                <p>{error}</p>
+                <button 
+                    onClick={loadStats}
+                    style={{
                         marginTop: '20px',
                         padding: '10px 20px',
                         backgroundColor: '#007bff',
                         color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        marginRight: '10px'
+                    }}
+                >
+                    Попробовать снова
+                </button>
+                <Link 
+                    to="/"
+                    style={{
+                        marginTop: '20px',
+                        padding: '10px 20px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
                         textDecoration: 'none',
-                        borderRadius: '5px'
-                    }}>
-                        Начать играть
-                    </a>
-                </div>
-            )}
+                        display: 'inline-block'
+                    }}
+                >
+                    🎮 На главную
+                </Link>
+            </div>
+        );
+    }
 
+    if (!stats) {
+        return (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+                <h3>📊 Статистика</h3>
+                <p>Нет данных о статистике</p>
+                <p>Сыграйте несколько игр, чтобы увидеть статистику!</p>
+                <button 
+                    onClick={handleStartNewGame}
+                    style={{
+                        marginTop: '20px',
+                        padding: '12px 25px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        margin: '0 auto'
+                    }}
+                >
+                    🎮 Начать игру
+                </button>
+            </div>
+        );
+    }
+
+    const { summary, recent_games } = stats;
+
+    return (
+        <div style={{ padding: '20px' }}>
+            {/* Заголовок с кнопками */}
             <div style={{ 
-                marginTop: '40px', 
-                padding: '20px', 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: '5px'
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '30px',
+                flexWrap: 'wrap',
+                gap: '20px'
             }}>
-                <h3>Советы для улучшения результатов</h3>
-                <ul style={{ lineHeight: '1.6' }}>
-                    <li>Внимательно слушайте аудио перед выбором слова</li>
-                    <li>Не торопитесь - у вас нет ограничения по времени</li>
-                    <li>Если не уверены, пропустите пару и вернитесь к ней позже</li>
-                    <li>Тренируйтесь регулярно для улучшения навыков</li>
-                </ul>
+                <h1 style={{ margin: 0 }}>📊 Моя статистика</h1>
+                
+                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                    <button
+                        onClick={handleStartNewGame}
+                        style={{
+                            padding: '12px 25px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}
+                    >
+                        🎮 Новая игра
+                    </button>
+                    
+                    <Link 
+                        to="/"
+                        style={{
+                            padding: '12px 25px',
+                            backgroundColor: '#6c757d',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}
+                    >
+                        🏠 На главную
+                    </Link>
+                </div>
+            </div>
+            
+            {/* Основные метрики */}
+            <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '20px',
+                marginBottom: '40px'
+            }}>
+                <div style={{
+                    backgroundColor: '#e8f5e9',
+                    padding: '25px',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    transition: 'transform 0.3s',
+                    cursor: 'pointer'
+                }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                   onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2e7d32' }}>
+                        {summary.total_games}
+                    </div>
+                    <div style={{ fontSize: '16px', color: '#555' }}>
+                        Всего игр
+                    </div>
+                </div>
+                
+                <div style={{
+                    backgroundColor: '#e3f2fd',
+                    padding: '25px',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    transition: 'transform 0.3s',
+                    cursor: 'pointer'
+                }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                   onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1565c0' }}>
+                        {summary.total_correct}
+                    </div>
+                    <div style={{ fontSize: '16px', color: '#555' }}>
+                        Правильных ответов
+                    </div>
+                </div>
+                
+                <div style={{
+                    backgroundColor: '#fff3e0',
+                    padding: '25px',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    transition: 'transform 0.3s',
+                    cursor: 'pointer'
+                }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                   onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#e65100' }}>
+                        {Math.round(summary.avg_accuracy || 0)}%
+                    </div>
+                    <div style={{ fontSize: '16px', color: '#555' }}>
+                        Средняя точность
+                    </div>
+                </div>
+            </div>
+
+            {/* Последние игры */}
+            <div style={{ 
+                backgroundColor: '#fff',
+                borderRadius: '10px',
+                padding: '25px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                marginBottom: '30px'
+            }}>
+                <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '25px'
+                }}>
+                    <h2 style={{ margin: 0 }}>Последние игры</h2>
+                    <span style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '5px 15px',
+                        borderRadius: '20px',
+                        fontSize: '14px',
+                        color: '#6c757d'
+                    }}>
+                        Последние {recent_games.length} игр
+                    </span>
+                </div>
+                
+                {recent_games.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#666', padding: '30px' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎮</div>
+                        <p>У вас пока нет сыгранных игр</p>
+                        <button 
+                            onClick={handleStartNewGame}
+                            style={{
+                                marginTop: '20px',
+                                padding: '12px 25px',
+                                backgroundColor: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '16px',
+                                fontWeight: '600'
+                            }}
+                        >
+                            🚀 Начать первую игру!
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ 
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '15px'
+                    }}>
+                        {recent_games.map((game, index) => (
+                            <div 
+                                key={game.id}
+                                style={{
+                                    padding: '15px',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e9ecef',
+                                    transition: 'transform 0.2s',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <div style={{ 
+                                    fontSize: '14px', 
+                                    color: '#666',
+                                    marginBottom: '5px'
+                                }}>
+                                    Игра #{recent_games.length - index}
+                                </div>
+                                <div style={{ 
+                                    fontSize: '20px', 
+                                    fontWeight: 'bold',
+                                    color: game.correct_count > game.incorrect_count ? '#28a745' : '#dc3545'
+                                }}>
+                                    {game.correct_count}/{game.correct_count + game.incorrect_count}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#666' }}>
+                                    Точность: {game.accuracy}%
+                                </div>
+                                <div style={{ 
+                                    fontSize: '12px', 
+                                    color: '#999',
+                                    marginTop: '10px'
+                                }}>
+                                    {new Date(game.game_date).toLocaleDateString('ru-RU', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Детальная статистика */}
+            <div style={{ 
+                backgroundColor: '#fff',
+                borderRadius: '10px',
+                padding: '25px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px'
+                }}>
+                    <h3 style={{ margin: 0 }}>Детальная статистика</h3>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                            onClick={loadStats}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#6c757d',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            Обновить
+                        </button>
+                        <button 
+                            onClick={handleStartNewGame}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            🎮 Играть
+                        </button>
+                    </div>
+                </div>
+                
+                <div style={{ 
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: '20px'
+                }}>
+                    <div>
+                        <h4>Общая информация</h4>
+                        <ul style={{ lineHeight: '2' }}>
+                            <li><strong>Всего игр:</strong> {summary.total_games}</li>
+                            <li><strong>Правильных ответов:</strong> {summary.total_correct}</li>
+                            <li><strong>Неправильных ответов:</strong> {summary.total_incorrect}</li>
+                            <li><strong>Общая точность:</strong> {Math.round(summary.avg_accuracy || 0)}%</li>
+                            <li><strong>Среднее правильных за игру:</strong> {summary.avg_correct_per_game?.toFixed(1) || '0'}</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4>Последняя активность</h4>
+                        {summary.last_game_date ? (
+                            <div>
+                                <p>Последняя игра: {new Date(summary.last_game_date).toLocaleString('ru-RU')}</p>
+                                <div style={{ 
+                                    marginTop: '20px',
+                                    padding: '15px',
+                                    backgroundColor: '#e9ecef',
+                                    borderRadius: '6px'
+                                }}>
+                                    <p style={{ margin: 0, fontWeight: 'bold' }}>Хотите улучшить статистику?</p>
+                                    <p style={{ margin: '10px 0 0 0', fontSize: '14px' }}>
+                                        Сыграйте еще одну игру!
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p>Еще не было игр</p>
+                                <button 
+                                    onClick={handleStartNewGame}
+                                    style={{
+                                        marginTop: '20px',
+                                        padding: '12px 25px',
+                                        backgroundColor: '#007bff',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '16px',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    🚀 Начать первую игру
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Кнопка быстрого старта внизу */}
+            <div style={{ 
+                marginTop: '30px', 
+                textAlign: 'center',
+                padding: '20px',
+                backgroundColor: '#e9ecef',
+                borderRadius: '10px'
+            }}>
+                <h3>Готовы сыграть?</h3>
+                <p style={{ marginBottom: '20px' }}>Начните новую игру прямо сейчас!</p>
+                <button 
+                    onClick={handleStartNewGame}
+                    style={{
+                        padding: '15px 40px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
+                        transition: 'transform 0.3s'
+                    }}
+                    onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                    onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                    🎮 НАЧАТЬ НОВУЮ ИГРУ
+                </button>
             </div>
         </div>
     );
